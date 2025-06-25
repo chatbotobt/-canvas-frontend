@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Canvas LMS Chatbot</title>
+</head>
+<body>
+    <h1>Canvas LMS Chatbot</h1>
+    <input type="text" id="question" placeholder="Ask about Canvas..." size="50">
+    <button onclick="ask()">Ask</button>
+    <pre id="answer" style="white-space: pre-wrap;"></pre>
+
+    <script>
+        async function ask() {
+            const question = document.getElementById('question').value;
+            const response = await fetch('https://your-huggingface-username.hf.space/api/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: [question] })
+            });
+            const result = await response.json();
+            document.getElementById('answer').textContent = result.data[0];
+        }
+    </script>
+</body>
+</html>
