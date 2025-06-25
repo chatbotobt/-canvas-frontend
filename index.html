@@ -1,43 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Canvas LMS Chatbot Frontend</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chatbot Frontend</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; }
+    #chatbox { border: 1px solid #ccc; padding: 1rem; height: 400px; overflow-y: auto; }
+    .message { margin: 0.5rem 0; }
+    .user { color: blue; }
+    .bot { color: green; }
+    input[type="text"] { width: 80%; padding: 0.5rem; }
+    button { padding: 0.5rem 1rem; }
+  </style>
 </head>
 <body>
-    <h1>Canvas LMS Chatbot</h1>
-    <input id="userInput" type="text" placeholder="Type your message here" />
-    <button onclick="sendMessage()">Send</button>
-    <div id="chatbox"></div>
 
-    <script>
-        const backendUrl = "https://canvas-backend.hf.space/api/predict/";
+  <h2>Chatbot Frontend</h2>
 
-        async function sendMessage() {
-            const inputElem = document.getElementById("userInput");
-            const chatbox = document.getElementById("chatbox");
-            const userMessage = inputElem.value;
-            if (!userMessage) return;
+  <div id="chatbox"></div>
 
-            chatbox.innerHTML += `<p><b>You:</b> ${userMessage}</p>`;
+  <input type="text" id="messageInput" placeholder="Type your message here..." />
+  <button onclick="sendMessage()">Send</button>
 
-            // Send message to backend API
-            try {
-                const response = await fetch(backendUrl, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ data: [userMessage] })
-                });
+  <script>
+    const chatbox = document.getElementById('chatbox');
+    const messageInput = document.getElementById('messageInput');
 
-                const data = await response.json();
-                const botReply = data.data[0];
-                chatbox.innerHTML += `<p><b>Bot:</b> ${botReply}</p>`;
-            } catch (err) {
-                chatbox.innerHTML += `<p style="color:red;">Error contacting backend.</p>`;
-            }
+    // Change this URL to your Hugging Face Space backend URL, e.g.:
+    // https://your-username-yourspace.hf.space/run/predict
+    const backendURL = 'https://your-hf-space.hf.space/run/predict';
 
-            inputElem.value = "";
-        }
-    </script>
+    // Maintain chat history as pairs [userMsg, botMsg]
+    let chatHistory = [];
+
+    function appendMessage(text, sender) {
+      const div = document.createElement('div');
+      div.classList.add('message', sender);
+      div.textContent = (sender === 'user' ? 'You: ' : 'Bot: ') + text;
+      chatbox.appendChild(div);
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const userMessage = messageInput.value.trim();
+      if (!userMessage) return;
+
+      appendMessage(userMessage, 'user');
+      messageInput.value = '';
+
+      // Prepare data for Gradio backend
+      // Gradio expects JSON { data: [input_text, chat_history] }
+      const payload = {
+        data: [userMessage, chatHistory]
+      };
+
+      try {
+        const response = await fetch(backendURL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await response.json();
+
+        // Gradio returns: { data: [clear_input, chat_history] }
+        chatHistory = result.data[1];
+        const botReply = chatHistory[chatHistory.length - 1][1];
+        appendMessage(botReply, 'bot');
+
+      } catch (error) {
+        appendMessage('Error contacting backend.', 'bot');
+        console.error(error);
+      }
+    }
+
+    // Optional: submit on enter key
+    messageInput.addEventListener('keypress', e => {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  </script>
 </body>
 </html>
