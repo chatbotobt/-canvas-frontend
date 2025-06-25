@@ -1,53 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Chatbot Frontend</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
-    #chat { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; }
-    .message { margin: 5px 0; }
-    .user { color: blue; }
-    .bot { color: green; }
-  </style>
+    <meta charset="UTF-8" />
+    <title>Canvas LMS Chatbot Frontend</title>
 </head>
 <body>
-  <h1>Chatbot Frontend</h1>
-  <div id="chat"></div>
-  <input type="text" id="input" placeholder="Type your message" style="width:80%">
-  <button onclick="send()">Send</button>
+    <h1>Canvas LMS Chatbot</h1>
+    <input id="userInput" type="text" placeholder="Type your message here" />
+    <button onclick="sendMessage()">Send</button>
+    <div id="chatbox"></div>
 
-  <script>
-    // This URL points to the HF Space backend you must create or fork
-    const backendUrl = "https://chatbotobt-canvas-backend.hf.space/api/predict/";
+    <script>
+        const backendUrl = "https://canvas-backend.hf.space/api/predict/";
 
-    const chatDiv = document.getElementById("chat");
-    const input = document.getElementById("input");
+        async function sendMessage() {
+            const inputElem = document.getElementById("userInput");
+            const chatbox = document.getElementById("chatbox");
+            const userMessage = inputElem.value;
+            if (!userMessage) return;
 
-    function addMessage(text, sender) {
-      const div = document.createElement("div");
-      div.className = "message " + sender;
-      div.textContent = (sender === "user" ? "You: " : "Bot: ") + text;
-      chatDiv.appendChild(div);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
+            chatbox.innerHTML += `<p><b>You:</b> ${userMessage}</p>`;
 
-    async function send() {
-      const msg = input.value.trim();
-      if (!msg) return;
-      addMessage(msg, "user");
-      input.value = "";
-      try {
-        const response = await fetch(backendUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: [msg] })
-        });
-        const json = await response.json();
-        addMessage(json.data[0], "bot");
-      } catch (e) {
-        addMessage("Error contacting backend.", "bot");
-      }
-    }
-  </script>
+            // Send message to backend API
+            try {
+                const response = await fetch(backendUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ data: [userMessage] })
+                });
+
+                const data = await response.json();
+                const botReply = data.data[0];
+                chatbox.innerHTML += `<p><b>Bot:</b> ${botReply}</p>`;
+            } catch (err) {
+                chatbox.innerHTML += `<p style="color:red;">Error contacting backend.</p>`;
+            }
+
+            inputElem.value = "";
+        }
+    </script>
 </body>
 </html>
