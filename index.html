@@ -12,13 +12,24 @@
     <script>
         async function ask() {
             const question = document.getElementById('question').value;
-            const response = await fetch('https://your-huggingface-username.hf.space/api/predict', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ data: [question] })
-            });
-            const result = await response.json();
-            document.getElementById('answer').textContent = result.data[0];
+            if (!question.trim()) {
+                alert("Please enter a question.");
+                return;
+            }
+            document.getElementById('answer').textContent = "Thinking...";
+
+            try {
+                const response = await fetch('https://YOUR-HF-USERNAME-YOUR-SPACE-NAME.hf.space/api/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data: [question] })
+                });
+                const result = await response.json();
+                document.getElementById('answer').textContent = result.data[0] || "No answer received.";
+            } catch (error) {
+                document.getElementById('answer').textContent = "Error contacting backend.";
+                console.error(error);
+            }
         }
     </script>
 </body>
