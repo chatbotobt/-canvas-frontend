@@ -2,85 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Chatbot Frontend</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chatbot</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; }
-    #chatbox { border: 1px solid #ccc; padding: 1rem; height: 400px; overflow-y: auto; }
-    .message { margin: 0.5rem 0; }
-    .user { color: blue; }
-    .bot { color: green; }
-    input[type="text"] { width: 80%; padding: 0.5rem; }
-    button { padding: 0.5rem 1rem; }
+    body { font-family: sans-serif; padding: 20px; }
+    #chatBox { max-width: 600px; margin: auto; padding: 10px; border: 1px solid #ccc; min-height: 300px; }
+    .response { margin-top: 10px; }
+    input[type="text"] { width: 80%; padding: 10px; }
+    button { padding: 10px; }
   </style>
 </head>
 <body>
-
-  <h2>Chatbot Frontend</h2>
-
-  <div id="chatbox"></div>
-
-  <input type="text" id="messageInput" placeholder="Type your message here..." />
+  <h1>Simple Chatbot</h1>
+  <div id="chatBox"></div>
+  <input type="text" id="userInput" placeholder="Type your message..." />
   <button onclick="sendMessage()">Send</button>
 
   <script>
-    const chatbox = document.getElementById('chatbox');
-    const messageInput = document.getElementById('messageInput');
-
-    // Change this URL to your Hugging Face Space backend URL, e.g.:
-    // https://your-username-yourspace.hf.space/run/predict
-    const backendURL = 'https://your-hf-space.hf.space/run/predict';
-
-    // Maintain chat history as pairs [userMsg, botMsg]
-    let chatHistory = [];
-
-    function appendMessage(text, sender) {
-      const div = document.createElement('div');
-      div.classList.add('message', sender);
-      div.textContent = (sender === 'user' ? 'You: ' : 'Bot: ') + text;
-      chatbox.appendChild(div);
-      chatbox.scrollTop = chatbox.scrollHeight;
-    }
+    const backendURL = "https://<your-username>-canvas-backend.hf.space/run/predict";
 
     async function sendMessage() {
-      const userMessage = messageInput.value.trim();
-      if (!userMessage) return;
+      const input = document.getElementById("userInput").value;
+      if (!input.trim()) return;
+      document.getElementById("chatBox").innerHTML += `<p><b>You:</b> ${input}</p>`;
 
-      appendMessage(userMessage, 'user');
-      messageInput.value = '';
+      const response = await fetch(backendURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: [input] })
+      });
 
-      // Prepare data for Gradio backend
-      // Gradio expects JSON { data: [input_text, chat_history] }
-      const payload = {
-        data: [userMessage, chatHistory]
-      };
-
-      try {
-        const response = await fetch(backendURL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        const result = await response.json();
-
-        // Gradio returns: { data: [clear_input, chat_history] }
-        chatHistory = result.data[1];
-        const botReply = chatHistory[chatHistory.length - 1][1];
-        appendMessage(botReply, 'bot');
-
-      } catch (error) {
-        appendMessage('Error contacting backend.', 'bot');
-        console.error(error);
-      }
+      const result = await response.json();
+      const reply = result.data[0] || "No reply";
+      document.getElementById("chatBox").innerHTML += `<div class="response"><b>Bot:</b> ${reply}</div>`;
+      document.getElementById("userInput").value = "";
     }
-
-    // Optional: submit on enter key
-    messageInput.addEventListener('keypress', e => {
-      if (e.key === 'Enter') {
-        sendMessage();
-      }
-    });
   </script>
 </body>
 </html>
