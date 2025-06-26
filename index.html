@@ -2,41 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chatbot</title>
+  <title>Chatbot Frontend</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    #chatBox { max-width: 600px; margin: auto; padding: 10px; border: 1px solid #ccc; min-height: 300px; }
-    .response { margin-top: 10px; }
-    input[type="text"] { width: 80%; padding: 10px; }
-    button { padding: 10px; }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
+    #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; }
+    #input { width: 80%; }
+    #send { width: 18%; }
+    .user { color: blue; }
+    .bot { color: green; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Simple Chatbot</h1>
-  <div id="chatBox"></div>
-  <input type="text" id="userInput" placeholder="Type your message..." />
-  <button onclick="sendMessage()">Send</button>
+  <h1>Chatbot Frontend</h1>
+  <div id="chat"></div>
+  <input id="input" type="text" placeholder="Type your message here..." />
+  <button id="send">Send</button>
 
   <script>
-    const backendURL = "https://<your-username>-canvas-backend.hf.space/run/predict";
+    const backendURL = "https://YOUR-HUGGINGFACE-SPACE-NAME.hf.space/run/predict";
+
+    const chatDiv = document.getElementById("chat");
+    const inputBox = document.getElementById("input");
+    const sendBtn = document.getElementById("send");
+
+    function appendMessage(text, cls) {
+      const p = document.createElement("p");
+      p.textContent = text;
+      p.className = cls;
+      chatDiv.appendChild(p);
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
 
     async function sendMessage() {
-      const input = document.getElementById("userInput").value;
-      if (!input.trim()) return;
-      document.getElementById("chatBox").innerHTML += `<p><b>You:</b> ${input}</p>`;
-
-      const response = await fetch(backendURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: [input] })
-      });
-
-      const result = await response.json();
-      const reply = result.data[0] || "No reply";
-      document.getElementById("chatBox").innerHTML += `<div class="response"><b>Bot:</b> ${reply}</div>`;
-      document.getElementById("userInput").value = "";
+      const message = inputBox.value.trim();
+      if (!message) return;
+      appendMessage("You: " + message, "user");
+      inputBox.value = "";
+      try {
+        const response = await fetch(backendURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: [message] })
+        });
+        const json = await response.json();
+        // response format: {data: ["generated response"]}
+        appendMessage("Bot: " + json.data[0], "bot");
+      } catch (e) {
+        appendMessage("Bot: Error contacting backend.", "bot");
+      }
     }
+
+    sendBtn.onclick = sendMessage;
+    inputBox.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
   </script>
 </body>
 </html>
