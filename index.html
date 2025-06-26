@@ -1,59 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Chatbot Frontend</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; }
-    #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; }
-    #input { width: 80%; }
-    #send { width: 18%; }
-    .user { color: blue; }
-    .bot { color: green; margin-top: 10px; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chatbot Frontend</title>
 </head>
 <body>
-  <h1>Chatbot Frontend</h1>
-  <div id="chat"></div>
-  <input id="input" type="text" placeholder="Type your message here..." />
-  <button id="send">Send</button>
+    <h1>Simple Chatbot Frontend</h1>
+    <input type="text" id="userInput" placeholder="Type your message here" style="width:300px" />
+    <button onclick="sendMessage()">Send</button>
 
-  <script>
-    const backendURL = "https://YOUR-HUGGINGFACE-SPACE-NAME.hf.space/run/predict";
+    <h3>Bot Response:</h3>
+    <p id="botResponse"></p>
 
-    const chatDiv = document.getElementById("chat");
-    const inputBox = document.getElementById("input");
-    const sendBtn = document.getElementById("send");
+    <script>
+        async function sendMessage() {
+            const message = document.getElementById("userInput").value;
+            if (!message) return alert("Please enter a message");
 
-    function appendMessage(text, cls) {
-      const p = document.createElement("p");
-      p.textContent = text;
-      p.className = cls;
-      chatDiv.appendChild(p);
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
+            // Replace this URL with your deployed Hugging Face Space URL
+            const apiUrl = "https://YOUR-HUGGINGFACE-SPACE-NAME.hf.space/api/predict";
 
-    async function sendMessage() {
-      const message = inputBox.value.trim();
-      if (!message) return;
-      appendMessage("You: " + message, "user");
-      inputBox.value = "";
-      try {
-        const response = await fetch(backendURL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: [message] })
-        });
-        const json = await response.json();
-        // response format: {data: ["generated response"]}
-        appendMessage("Bot: " + json.data[0], "bot");
-      } catch (e) {
-        appendMessage("Bot: Error contacting backend.", "bot");
-      }
-    }
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    data: [message]
+                }),
+            });
 
-    sendBtn.onclick = sendMessage;
-    inputBox.onkeypress = (e) => { if(e.key === "Enter") sendMessage(); };
-  </script>
+            if (!response.ok) {
+                document.getElementById("botResponse").innerText = "Error contacting backend.";
+                return;
+            }
+
+            const result = await response.json();
+            // The response from Gradio API usually looks like: { data: [responseText] }
+            document.getElementById("botResponse").innerText = result.data[0];
+        }
+    </script>
 </body>
 </html>
